@@ -8,5 +8,5 @@ html {
   /* This enables smooth scrolling when a user clicks on an anchor link */
   scroll-behavior: smooth;
   /* This ensures that there is space for the fixed navbar when scrolling to a section */
-  scroll-padding-top: 80px; /* Adjust this value to match your navbar's height */
+  scroll-padding-top: 30px; /* Adjust this value to match your navbar's height */
 }

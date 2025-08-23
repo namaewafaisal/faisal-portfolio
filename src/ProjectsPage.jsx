@@ -11,20 +11,39 @@ const projects = [
     tech: 'Linux, Hyprland',
     link: 'https://github.com/namaewafaisal/dotfiles',
   },
+  {
+    title: 'Course Platform Backend',
+    description: 'Course App with role based access',
+    tech : 'Spring Boot + MongoDB + JWT Security.',
+    link : 'https://github.com/namaewafaisal/CoursePlatformBackend'
+  },
+  {
+    title: 'Web Scraping App',
+    description: 'Python + BeautifulSoup for data extraction.',
+    tech: 'Python, BeautifulSoup',
+    link: 'https://github.com/namaewafaisal/WebScrapingApp',
+  },
+  {
+    title: 'Data Science App',
+    description: 'Python + NumPy + Pandas (planned).',
+    tech: 'Python, NumPy, Pandas',
+    link: 'https://github.com/namaewafaisal/DataScienceApp',
+  }
 ];
 
 // Added id="projects" to make this section targetable for scrolling
 const ProjectsPage = () => (
-  <div id="projects" className="max-w-4xl mx-auto p-6">
+  <>
+  <div id="projects" className="min-h-screen max-w-4xl mx-auto p-6">
     <h2 className="text-3xl font-bold mb-6">Projects</h2>
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
       {projects.map(({ title, description, tech, link }) => (
-        <div key={title} className="border rounded p-4 shadow hover:shadow-lg transition">
+        <div key={title} className="flex flex-col border-r-2 border-b-2 p-6 bg-zinc-950 rounded-lg shadow transition-transform duration-200 hover:border-r-0 hover:border-b-0 hover:border-l-2 hover:border-t-2">
           <h3 className="text-xl font-semibold mb-2">{title}</h3>
           <p className="mb-2">{description}</p>
           <p className="text-sm font-mono mb-3">Tech: {tech}</p>
           {link !== '#' && (
-            <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+            <a href={link} target="_blank" rel="noopener noreferrer" className="mt-auto self-end border-2 border-white p-1 px-2 rounded-2xl text-white hover:underline">
               View Project
             </a>
           )}
@@ -32,6 +51,8 @@ const ProjectsPage = () => (
       ))}
     </div>
   </div>
+  
+</>
 );
 
 export default ProjectsPage;
