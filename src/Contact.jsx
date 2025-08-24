@@ -34,9 +34,6 @@ function Contact() {
       label: "Facebook",
       icon: <SiFacebook size={32} />
     },
-    {
-      
-    }
   ]
   return (
     // Added id="contact" to make this section targetable for scrolling

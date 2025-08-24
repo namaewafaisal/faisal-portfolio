@@ -34,7 +34,7 @@ const projects = [
 // Added id="projects" to make this section targetable for scrolling
 const ProjectsPage = () => (
   <>
-  <div id="projects" className="min-h-screen max-w-4xl mx-auto p-6">
+  <div id="projects" className="max-w-4xl mx-auto p-6">
     <h2 className="text-3xl font-bold mb-6">Projects</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
       {projects.map(({ title, description, tech, link }) => (
@@ -43,7 +43,7 @@ const ProjectsPage = () => (
           <p className="mb-2">{description}</p>
           <p className="text-sm font-mono mb-3">Tech: {tech}</p>
           {link !== '#' && (
-            <a href={link} target="_blank" rel="noopener noreferrer" className="mt-auto self-end border-2 border-white p-1 px-2 rounded-2xl text-white hover:underline">
+            <a href={link} target="_blank" rel="noopener noreferrer" className="mt-auto self-end border-l-2 border-b-2 border-white/35 p-1 px-2 rounded-2xl text-white hover:underline transition-transform duration-100 hover:scale-115 cursor-pointer">
               View Project
             </a>
           )}

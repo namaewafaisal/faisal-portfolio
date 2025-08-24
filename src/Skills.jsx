@@ -1,14 +1,11 @@
 import React from 'react'
 import { useState, useEffect } from "react";
 
+
 function Skills() {
-  const [openSkill, setOpenSkill] = useState(null);
-  const [selectedSkill, setSelectedSkill] = useState(null);
-  const toggleSkill = (tech) => {
-    setOpenSkill(openSkill === tech ? null : tech);
-  };
+  const [Category, setCategory] = useState(null);
   useEffect(() => {
-    if (selectedSkill) {
+    if (Category) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "auto";
@@ -17,7 +14,7 @@ function Skills() {
     return () => {
       document.body.style.overflow = "auto"; // cleanup on unmount
     };
-  }, [selectedSkill]);
+  }, [Category]);
   const skills = [
   {
     category: "Programming Languages",
@@ -58,50 +55,65 @@ function Skills() {
       { tech: "Linux", description: "Comfortable with Linux environments, CLI tools, and system setup/customization." },
       { tech: "Vite", description: "Used as a frontend build tool for React projects." }
     ]
-  }
+  },
+  {
+  category: "Soft Skills & Other Competencies",
+  skills: [
+    { tech: "Problem Solving", description: "Strong analytical and logical thinking skills, experienced in solving algorithmic and real-world problems." },
+    { tech: "Communication", description: "Able to convey ideas clearly in both written and verbal forms; improving public speaking skills." },
+    { tech: "Teamwork & Collaboration", description: "Experience working in collaborative projects, using version control and agile practices." },
+    { tech: "Continuous Learning", description: "Quick to learn new technologies and adapt to evolving development environments." }
+  ]
+}
 ];
 
   return (
     <> 
-    <div id="skills" className="min-h-screen flex flex-col justify-center items-center px-6 py-16 relative">
+    <div id="skills" className="min-h-screen flex flex-col justify-center items-center px-6 py-16">
       <h1 className="text-4xl font-bold mb-6">Skills</h1>
-      <div className="grid grid-cols-3 gap-8 mt-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 sm:grid-cols-2 max-w-4xl  gap-8 mt-10">
         {skills.map(category => (
           <div
             key={category.category}
-            className="mb-8 border-2 p-5 group cursor-pointer hover:bg-gray-950 rounded-2xl"
+            className="flex flex-col relative mb-8 min-w-auto border-r-2 border-b-2 p-6 bg-zinc-950 rounded-lg shadow transition-transform duration-200 hover:border-r-0 hover:border-b-0 hover:border-l-2 hover:border-t-2"
           >
-            <h3 className="text-xl font-semibold mb-4">{category.category}</h3>
+            <h3 className="text-xl font-semibold mb-4 ">{category.category}</h3>
             <ul className="list-disc list-inside">
               {category.skills.map(skill => (
                 <li
                   key={skill.tech}
-                  onClick={() => setSelectedSkill({ ...skill, category: category.category })}
-                  className="cursor-pointer transition-transform duration-100 hover:scale-105"
                 >
                   <strong>{skill.tech}</strong>
                 </li>
               ))}
             </ul>
+             <button className="mt-auto self-end border-l-2 border-b-2 border-white/35 p-1 px-2 rounded-2xl text-white hover:underline transition-transform duration-100 hover:scale-115 cursor-pointer"
+              onClick={() => setCategory({ category: category.category, skills: [...category.skills] })}>
+              More
+            </button>
           </div>
         ))}
       </div>
 
       {/* Modal */}
-      {selectedSkill && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 ">
-          <div className="bg-blend-darken text-white p-8 rounded-2xl shadow-lg max-w-lg w-full relative border-l-2 border-b-2 border-white/40 p-4">
+      {Category && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 "
+        onClick={() => setCategory(null)}>
+          <div className="bg-neutral-900 text-white p-8 rounded-2xl shadow-lg max-w-lg w-full relative border-l-2 border-b-2 border-white/70"
+          onClick={(e) => e.stopPropagation()}>
             <button
               className="absolute top-3 right-3 text-gray-400 hover:text-white text-xl"
-              onClick={() => setSelectedSkill(null)}
+              onClick={() => setCategory(null)}
             >
               ✕
             </button>
-            <h2 className="text-2xl font-bold mb-2">{selectedSkill.tech}</h2>
-            <p className="text-gray-400 text-sm mb-4">
-              Category: {selectedSkill.category}
-            </p>
-            <p className="text-base">{selectedSkill.description}</p>
+            <h2 className="text-2xl font-bold mb-2 text-center">{Category.category}</h2>
+            {Category.skills.map((skill) => (
+              <div key={skill.tech}>
+                <h3 className="text-xl font-semibold mb-1">{skill.tech}</h3>
+                <p className="pl-4 text-base mb-2">{skill.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
