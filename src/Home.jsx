@@ -21,13 +21,13 @@ function Home() {
       href={`${import.meta.env.BASE_URL}/Mohamed-Faisal-Resume.pdf`}
       target="_blank"
       rel="noopener noreferrer"
-      className="bg-blue-600  text-white font-bold py-2 px-4 rounded transition-transform duration-100 hover:scale-110"
+      className="text-white border-2 font-bold py-2 px-4 rounded-3xl transition-transform duration-100 hover:scale-110"
     >
       View Resume
     </a>
     <button
         onClick={handleDownload}
-        className="bg-green-600 text-white font-bold py-2 px-4 rounded transition-transform duration-100 hover:scale-110"
+        className="bg-white text-black font-bold py-2 px-4 rounded-3xl transition-transform duration-100 hover:scale-110"
     >
       Download Resume
     </button>

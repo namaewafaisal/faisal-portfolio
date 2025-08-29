@@ -15,7 +15,7 @@ function Contact() {
       icon: <SiGmail size={32} />
     },
     {
-      href: "https://leetcode.com/u/mhd-faisal-46/",
+      href: "https://leetcode.com/u/namaewafaisal/",
       label: "LeetCode",
       icon: <SiLeetcode size={32} />
     },
@@ -25,7 +25,7 @@ function Contact() {
       icon: <SiLinkedin size={32} />
     },
     {
-      href: "https://www.hackerrank.com/mhd_faisal_46",
+      href: "https://www.hackerrank.com/namaewafaisal",
       label: "Hackerrank",
       icon: <SiHackerrank size={32} />
     },
