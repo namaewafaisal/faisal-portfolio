@@ -17,54 +17,59 @@ function Skills() {
   }, [Category]);
   const skills = [
   {
-    category: "Programming Languages",
+    category: "Frontend Development",
     skills: [
-      { tech: "Java", description: "Intermediate knowledge with experience in OOP, multithreading, exception handling, file handling, and collections." },
-      { tech: "Python", description: "Basic experience with scripting, NumPy, Pandas, and web scraping using BeautifulSoup." },
-      { tech: "C", description: "Hands-on experience with data structures like linked lists, stacks, and queues." },
-      { tech: "JavaScript", description: "Knowledge of ES6+, React, and frontend interactivity." },
-      { tech: "Assembly", description: "Currently learning low-level programming concepts." }
+      { tech: "HTML & TailwindCSS", description: "Responsive layouts with HTML5, CSS3, and TailwindCSS." },
+      { tech: "JavaScript (ES6+)", description: "Dynamic interactivity and DOM manipulation." },
+      { tech: "React.js + Vite", description: "Building interactive UIs with React, hooks, routing, and Axios integration." }
     ]
   },
   {
-    category: "Web Development",
+    category: "Backend Development",
     skills: [
-      { tech: "HTML & CSS", description: "Proficient in building responsive layouts with HTML5, CSS3, and TailwindCSS." },
-      { tech: "React.js", description: "Experience building interactive UIs with React and Vite." },
-      { tech: "RESTful APIs", description: "Skilled in designing and implementing REST APIs using Spring Boot." }
-    ]
-  },
-  {
-    category: "Frameworks & Tools",
-    skills: [
-      { tech: "Spring Boot", description: "Experience developing backend services, CRUD APIs, and authentication with Spring Security + JWT." },
-      { tech: "Microservices", description: "Knowledge of microservice architecture and modular backend design." },
-      { tech: "Git & GitHub", description: "Familiar with version control, branching, and collaborative development." }
+      { tech: "Java", description: "Intermediate knowledge with OOP, multithreading, exception handling, collections, and file handling." },
+      { tech: "Spring Boot", description: "Developing REST APIs, CRUD operations, authentication with Spring Security (JWT), and microservices." },
+      { tech: "Python", description: "Scripting, data processing with NumPy & Pandas, and web scraping using BeautifulSoup." },
+      { tech: "C", description: "Experience with data structures like linked lists, stacks, and queues." }
     ]
   },
   {
     category: "Databases",
     skills: [
-      { tech: "MySQL", description: "Experience with relational database design, queries, and CRUD operations." },
-      { tech: "MongoDB", description: "Hands-on experience with NoSQL databases and integration with Spring Boot." }
+      { tech: "MySQL", description: "Relational database design, queries, joins, and CRUD operations." },
+      { tech: "MongoDB", description: "NoSQL schema design and integration with Spring Boot." }
     ]
   },
   {
-    category: "Systems & Platforms",
+    category: "DevOps & Tools",
     skills: [
-      { tech: "Linux", description: "Comfortable with Linux environments, CLI tools, and system setup/customization." },
-      { tech: "Vite", description: "Used as a frontend build tool for React projects." }
+      { tech: "Git & GitHub", description: "Version control, branching strategies, and collaborative workflows." },
+      { tech: "Linux", description: "Proficient with CLI tools, customization, and system setup." },
+      { tech: "Vite", description: "Frontend build tool for React projects." }
     ]
   },
   {
-  category: "Soft Skills & Other Competencies",
-  skills: [
-    { tech: "Problem Solving", description: "Strong analytical and logical thinking skills, experienced in solving algorithmic and real-world problems." },
-    { tech: "Communication", description: "Able to convey ideas clearly in both written and verbal forms; improving public speaking skills." },
-    { tech: "Teamwork & Collaboration", description: "Experience working in collaborative projects, using version control and agile practices." },
-    { tech: "Continuous Learning", description: "Quick to learn new technologies and adapt to evolving development environments." }
-  ]
-}
+    category: "Other Technical Skills",
+    skills: [
+      { tech: "Assembly", description: "Learning low-level programming concepts." },
+      { tech: "Microservices", description: "Understanding modular backend design and architecture." }
+    ]
+  },
+  {
+    category: "Soft Skills",
+    skills: [
+      { tech: "Problem Solving", description: "Strong analytical skills, experienced in DSA and real-world problem solving." },
+      { tech: "Communication", description: "Clear written and verbal communication; improving public speaking." },
+      { tech: "Teamwork", description: "Collaboration in projects using agile practices and version control." },
+      { tech: "Continuous Learning", description: "Quickly adapting to new technologies and development environments." }
+    ]
+  },
+  {
+    category: "BlockChain",
+    skills: [
+      {tech: "Solidity", description: "Create Smart contracts for web3 backend" },
+    ]
+  },
 ];
 
   return (
