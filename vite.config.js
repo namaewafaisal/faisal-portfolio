@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: '/faisal-portfolio',
+  base: '/',
 
   server: {
     // Proxy API calls to the backend Express server during dev
