@@ -1,12 +1,57 @@
 @import "tailwindcss";
+
+/* ── Base ───────────────────────────────────── */
 body {
-    @apply font-mono;
-    @apply bg-black;
-    @apply text-white;
+  @apply font-mono bg-black text-white;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
 html {
-  /* This enables smooth scrolling when a user clicks on an anchor link */
   scroll-behavior: smooth;
-  /* This ensures that there is space for the fixed navbar when scrolling to a section */
-  scroll-padding-top: 30px; /* Adjust this value to match your navbar's height */
+  scroll-padding-top: 56px; /* Navbar height */
+}
+
+/* ── Scrollbar ──────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Utilities ──────────────────────────────── */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Subtle gradient border for cards ──────── */
+.card-border {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Animate fade-in ────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease both;
 }

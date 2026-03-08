@@ -1,61 +1,68 @@
-import React from 'react'
-import { FaGithub } from 'react-icons/fa';
-import { SiGmail, SiLeetcode, SiLinkedin, SiHackerrank, SiFacebook } from 'react-icons/si';
+/**
+ * Contact — Social links footer section using portfolio.config.js
+ */
+import React from "react";
+import { FaGithub, FaLinkedin } from "react-icons/fa";
+import { SiGmail, SiLeetcode, SiHackerrank } from "react-icons/si";
+import { config } from "../portfolio.config.js";
 
-function Contact() {
-  const contactLinks = [
-    {
-      href: "https://github.com/namaewafaisal",
-      label: "GitHub",
-      icon: <FaGithub size={32} />
-    },
-    {
-      href: "mailto:mohamed.faisal.4626@gmail.com",
-      label: "Gmail",
-      icon: <SiGmail size={32} />
-    },
-    {
-      href: "https://leetcode.com/u/namaewafaisal/",
-      label: "LeetCode",
-      icon: <SiLeetcode size={32} />
-    },
-    {
-      href: "https://www.linkedin.com/in/mohamed-faisal-811418351/",
-      label: "LinkedIn",
-      icon: <SiLinkedin size={32} />
-    },
-    {
-      href: "https://www.hackerrank.com/namaewafaisal",
-      label: "Hackerrank",
-      icon: <SiHackerrank size={32} />
-    },
-    {
-      href: "https://www.facebook.com/profile.php?id=100056840665412",
-      label: "Facebook",
-      icon: <SiFacebook size={32} />
-    },
-  ]
+const contactLinks = [
+  {
+    href: `https://github.com/${config.github}`,
+    label: "GitHub",
+    icon: <FaGithub size={28} />,
+    color: "hover:text-white",
+  },
+  {
+    href: `mailto:${config.email}`,
+    label: "Gmail",
+    icon: <SiGmail size={28} />,
+    color: "hover:text-red-400",
+  },
+  {
+    href: `https://leetcode.com/u/${config.leetcode}/`,
+    label: "LeetCode",
+    icon: <SiLeetcode size={28} />,
+    color: "hover:text-yellow-400",
+  },
+  {
+    href: config.linkedin,
+    label: "LinkedIn",
+    icon: <FaLinkedin size={28} />,
+    color: "hover:text-blue-400",
+  },
+  {
+    href: `https://www.hackerrank.com/${config.hackerrank}`,
+    label: "Hackerrank",
+    icon: <SiHackerrank size={28} />,
+    color: "hover:text-green-400",
+  },
+];
+
+export default function Contact() {
   return (
-    // Added id="contact" to make this section targetable for scrolling
-    <>
-    <div id="contact" className="min-h-10 flex gap-4 justify-center p-6">
-      {contactLinks.map(link => (
-        <a
-          key={link.label}
-          href={link.href}
-          aria-label={link.label}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white transition-transform duration-100 hover:scale-125"
-          title={link.label}
-        >
-          {link.icon}
-        </a>
-      ))}
-    </div>
-  </>
-);
+    <footer id="contact" className="py-16 border-t border-white/5">
+      <div className="max-w-6xl mx-auto px-6 flex flex-col items-center gap-6">
+        <p className="text-gray-500 text-sm">Get in touch</p>
+        <div className="flex gap-6">
+          {contactLinks.map(({ href, label, icon, color }) => (
+            <a
+              key={label}
+              href={href}
+              aria-label={label}
+              title={label}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`text-gray-600 ${color} transition-all duration-200 hover:scale-110`}
+            >
+              {icon}
+            </a>
+          ))}
+        </div>
+        <p className="text-gray-700 text-xs font-mono">
+          © {new Date().getFullYear()} {config.name} · Built with React + Vite
+        </p>
+      </div>
+    </footer>
+  );
 }
-
-export default Contact
-      
