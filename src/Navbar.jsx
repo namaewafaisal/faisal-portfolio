@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "#home", label: "Home" },
   { href: "#about", label: "About" },
   { href: "#skills", label: "Skills" },
+  { href: "#projects", label: "Projects" },
   { href: "#github", label: "GitHub" },
   { href: "#leetcode", label: "LeetCode" },
   { href: "#activity", label: "Activity" },
@@ -28,8 +29,8 @@ export default function Navbar() {
   return (
     <header
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled
-          ? "bg-black/80 backdrop-blur-md shadow-lg shadow-black/30 border-b border-white/5"
-          : "bg-transparent"
+        ? "bg-black/80 backdrop-blur-md shadow-lg shadow-black/30 border-b border-white/5"
+        : "bg-transparent"
         }`}
     >
       <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">

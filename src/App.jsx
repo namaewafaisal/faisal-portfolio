@@ -10,6 +10,7 @@ import Skills from "./Skills";
 import GitHubSection from "./components/GitHubSection";
 import LeetCodeSection from "./components/LeetCodeSection";
 import ActivityDashboard from "./components/ActivityDashboard";
+import ProjectsPage from "./ProjectsPage";
 import Contact from "./Contact";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Home />
         <About />
         <Skills />
+        <ProjectsPage />
         <GitHubSection />
         <LeetCodeSection />
         <ActivityDashboard />
