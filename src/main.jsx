@@ -8,21 +8,24 @@ import About from './About.jsx'
 import Projects from './ProjectsPage.jsx'
 import Contact from './Contact.jsx'
 
-const router = createBrowserRouter([
+
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <App />,
+      children: [
+        { index: true, element: <Home /> },
+        { path: 'about', element: <About /> },
+        { path: 'projects', element: <Projects /> },
+        { path: 'contact', element: <Contact /> },
+      ],
+    },
+  ],
   {
-    path: 'faisal-portfolio',
-    element: <App />,  // App wraps navbar + Outlet
-    children: [
-      { index: true, element: <Home /> },
-      { path: 'about', element: <About /> },
-      { path: 'projects', element: <Projects /> },
-      { path: 'contact', element: <Contact /> },
-    ],
-  },
-  {
-    basename: import.meta.env.DEV ? "/" : "/faisal-portfolio/"
-  },
-]);
+    basename: import.meta.env.DEV ? "/" : "/faisal-portfolio/",
+  }
+)
 
   // The error “Absolute route path '/' nested under path '/faisal-portfolio/' is not valid…”
   // occurs because child routes in React Router v6+ must be relative.
