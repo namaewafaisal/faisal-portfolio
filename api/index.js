@@ -34,12 +34,15 @@ async function withCache(key, fn) {
     return data;
 }
 
+// Helper to get GitHub token (checks both standard and Vite-prefixed for Vercel compatibility)
+const getGithubToken = () => process.env.GITHUB_TOKEN || process.env.VITE_GITHUB_TOKEN;
+
 // ── GITHUB ROUTES ─────────────────────────────────────────────────────────────
 
 app.get("/api/github/pinned", async (req, res) => {
     try {
         const data = await withCache(`github_pinned_${config.github}`, async () => {
-            const token = process.env.GITHUB_TOKEN;
+            const token = getGithubToken();
             if (token) {
                 const query = `query { user(login: "${config.github}") { pinnedItems(first: 6, types: REPOSITORY) { nodes { ... on Repository { name description url stargazerCount primaryLanguage { name color } updatedAt repositoryTopics(first: 5) { nodes { topic { name } } } } } } } }`;
                 const gqlRes = await axios.post("https://api.github.com/graphql", { query }, { headers: { Authorization: `bearer ${token}` } });
@@ -56,7 +59,7 @@ app.get("/api/github/pinned", async (req, res) => {
 app.get("/api/github/commits", async (req, res) => {
     try {
         const data = await withCache(`github_commits_${config.github}`, async () => {
-            const token = process.env.GITHUB_TOKEN;
+            const token = getGithubToken();
             const headers = token ? { Authorization: `token ${token}` } : {};
             let pinnedRepos = cache.get(`github_pinned_${config.github}`);
             if (!pinnedRepos) {
@@ -78,8 +81,11 @@ app.get("/api/github/commits", async (req, res) => {
 app.get("/api/github/contributions", async (req, res) => {
     try {
         const data = await withCache(`github_contrib_${config.github}`, async () => {
-            const token = process.env.GITHUB_TOKEN;
-            if (!token) return null;
+            const token = getGithubToken();
+            if (!token) {
+                console.warn("[Vercel API] GITHUB_TOKEN or VITE_GITHUB_TOKEN missing!");
+                return null;
+            }
             const to = new Date().toISOString();
             const from = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
             const query = `query { user(login: "${config.github}") { contributionsCollection(from: "${from}", to: "${to}") { contributionCalendar { totalContributions weeks { contributionDays { contributionCount date color } } } } } }`;
@@ -93,7 +99,7 @@ app.get("/api/github/contributions", async (req, res) => {
 app.get("/api/github/profile", async (req, res) => {
     try {
         const data = await withCache(`github_profile_${config.github}`, async () => {
-            const token = process.env.GITHUB_TOKEN;
+            const token = getGithubToken();
             const headers = token ? { Authorization: `token ${token}` } : {};
             const profileRes = await axios.get(`https://api.github.com/users/${config.github}`, { headers });
             const p = profileRes.data;
@@ -110,11 +116,24 @@ const LC_HEADERS = { "Content-Type": "application/json", "Referer": "https://lee
 app.get("/api/leetcode/stats", async (req, res) => {
     try {
         const data = await withCache(`lc_stats_${config.leetcode}`, async () => {
-            const query = `query userStats($username: String!) { matchedUser(username: $username) { username profile { ranking userAvatar } submitStats: submitStatsGlobal { acSubmissionNum { difficulty count } } } }`;
+            const query = `query userStats($username: String!) { matchedUser(username: $username) { username profile { ranking userAvatar realName } submitStats: submitStatsGlobal { acSubmissionNum { difficulty count } } } }`;
             const gqlRes = await axios.post(LEETCODE_GQL, { query, variables: { username: config.leetcode } }, { headers: LC_HEADERS });
             const user = gqlRes.data?.data?.matchedUser;
+            if (!user) throw new Error("LeetCode user not found");
             const acStats = user.submitStats.acSubmissionNum;
             return { username: user.username, ranking: user.profile.ranking, avatar: user.profile.userAvatar, total: acStats.find(s => s.difficulty === "All")?.count || 0, easy: acStats.find(s => s.difficulty === "Easy")?.count || 0, medium: acStats.find(s => s.difficulty === "Medium")?.count || 0, hard: acStats.find(s => s.difficulty === "Hard")?.count || 0 };
+        });
+        res.json({ success: true, data });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.get("/api/leetcode/recent", async (req, res) => {
+    try {
+        const data = await withCache(`lc_recent_${config.leetcode}`, async () => {
+            const query = `query recentSubmissions($username: String!, $limit: Int!) { recentAcSubmissionList(username: $username, limit: $limit) { id title titleSlug timestamp lang runtime memory } }`;
+            const gqlRes = await axios.post(LEETCODE_GQL, { query, variables: { username: config.leetcode, limit: config.leetcodeSettings.showRecentSubmissions } }, { headers: LC_HEADERS });
+            const subs = gqlRes.data?.data?.recentAcSubmissionList || [];
+            return subs.map((s) => ({ id: s.id, title: s.title, slug: s.titleSlug, url: `https://leetcode.com/problems/${s.titleSlug}/`, timestamp: s.timestamp, lang: s.lang, runtime: s.runtime, memory: s.memory }));
         });
         res.json({ success: true, data });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -126,6 +145,7 @@ app.get("/api/leetcode/heatmap", async (req, res) => {
             const query = `query userYearlyActivity($username: String!) { matchedUser(username: $username) { userCalendar { submissionCalendar totalActiveDays streak } } }`;
             const gqlRes = await axios.post(LEETCODE_GQL, { query, variables: { username: config.leetcode } }, { headers: LC_HEADERS });
             const cal = gqlRes.data?.data?.matchedUser?.userCalendar;
+            if (!cal) return null;
             const rawCalendar = JSON.parse(cal.submissionCalendar || "{}");
             const heatmapData = Object.entries(rawCalendar).map(([ts, count]) => ({ date: new Date(parseInt(ts) * 1000).toISOString().split("T")[0], count }));
             return { heatmapData, totalActiveDays: cal.totalActiveDays, streak: cal.streak };
@@ -134,7 +154,23 @@ app.get("/api/leetcode/heatmap", async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-app.get("/api/health", (req, res) => res.json({ status: "ok", github: config.github }));
+app.get("/api/leetcode/topics", async (req, res) => {
+    try {
+        const data = await withCache(`lc_topics_${config.leetcode}`, async () => {
+            const query = `query userTopicTags($username: String!) { matchedUser(username: $username) { tagProblemCounts { advanced { tagName tagSlug problemsSolved } intermediate { tagName tagSlug problemsSolved } fundamental { tagName tagSlug problemsSolved } } } }`;
+            const gqlRes = await axios.post(LEETCODE_GQL, { query, variables: { username: config.leetcode } }, { headers: LC_HEADERS });
+            const tagData = gqlRes.data?.data?.matchedUser?.tagProblemCounts;
+            if (!tagData) return [];
+            const all = [...tagData.fundamental, ...tagData.intermediate, ...tagData.advanced];
+            const merged = {};
+            all.forEach(({ tagName, problemsSolved }) => { merged[tagName] = (merged[tagName] || 0) + problemsSolved; });
+            return Object.entries(merged).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count).slice(0, 12);
+        });
+        res.json({ success: true, data });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.get("/api/health", (req, res) => res.json({ status: "ok", github: config.github, leetcode: config.leetcode }));
 
 // EXPORT FOR VERCEL
 export default app;
