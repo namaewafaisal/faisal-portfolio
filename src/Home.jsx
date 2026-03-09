@@ -33,15 +33,6 @@ const socialLinks = [
 export default function Home() {
   const { data: profile } = useFetch("/api/github/profile");
 
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = `${import.meta.env.BASE_URL}/Mohamed-Faisal-Resume.pdf`;
-    link.download = "Mohamed-Faisal-Resume.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div id="home" className="min-h-screen flex flex-col justify-center items-center text-white px-6 relative overflow-hidden">
 
@@ -101,7 +92,7 @@ export default function Home() {
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
-            href={`${import.meta.env.BASE_URL}/Mohamed-Faisal-Resume.pdf`}
+            href={`${import.meta.env.BASE_URL}Mohamed-Faisal-Resume.pdf`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 justify-center border border-white/20 text-white
@@ -112,15 +103,16 @@ export default function Home() {
             <FaFileAlt size={14} />
             View Resume
           </a>
-          <button
-            onClick={handleDownload}
+          <a
+            href={`${import.meta.env.BASE_URL}Mohamed-Faisal-Resume.pdf`}
+            download="Mohamed-Faisal-Resume.pdf"
             className="flex items-center gap-2 justify-center bg-white text-black font-semibold
                        py-2.5 px-6 rounded-full hover:bg-gray-100
                        transition-all duration-200 hover:scale-105"
           >
             <FaDownload size={14} />
             Download Resume
-          </button>
+          </a>
         </div>
 
         {/* Scroll indicator */}

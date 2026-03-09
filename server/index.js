@@ -69,39 +69,51 @@ app.get("/api/github/pinned", async (req, res) => {
     try {
         const data = await withCache(`github_pinned_${config.github}`, async () => {
             const token = process.env.GITHUB_TOKEN;
+
             if (token) {
-                // GraphQL query to get pinned repositories
+                console.log(`[GitHub] Attempting to fetch pinned repos for ${config.github}...`);
                 const query = `
-          query {
-            user(login: "${config.github}") {
-              pinnedItems(first: 6, types: REPOSITORY) {
-                nodes {
-                  ... on Repository {
-                    name
-                    description
-                    url
-                    stargazerCount
-                    primaryLanguage { name color }
-                    updatedAt
-                    repositoryTopics(first: 5) {
-                      nodes { topic { name } }
+                  query {
+                    user(login: "${config.github}") {
+                      pinnedItems(first: 6, types: REPOSITORY) {
+                        nodes {
+                          ... on Repository {
+                            name
+                            description
+                            url
+                            stargazerCount
+                            primaryLanguage { name color }
+                            updatedAt
+                            repositoryTopics(first: 5) {
+                              nodes { topic { name } }
+                            }
+                          }
+                        }
+                      }
                     }
                   }
+                `;
+                try {
+                    const gqlRes = await axios.post(
+                        "https://api.github.com/graphql",
+                        { query },
+                        { headers: { Authorization: `bearer ${token}` } }
+                    );
+                    const pinned = gqlRes.data?.data?.user?.pinnedItems?.nodes;
+                    if (pinned && pinned.length > 0) {
+                        console.log(`[GitHub] Successfully fetched ${pinned.length} pinned repos.`);
+                        return pinned.map(p => ({ ...p, isPinned: true }));
+                    }
+                    console.log("[GitHub] No pinned repositories found for this user.");
+                } catch (gqlErr) {
+                    console.error("[GitHub] GraphQL error:", gqlErr.response?.data || gqlErr.message);
                 }
-              }
-            }
-          }
-        `;
-                const gqlRes = await axios.post(
-                    "https://api.github.com/graphql",
-                    { query },
-                    { headers: { Authorization: `bearer ${token}` } }
-                );
-                const pinned = gqlRes.data?.data?.user?.pinnedItems?.nodes;
-                if (pinned && pinned.length > 0) return pinned;
+            } else {
+                console.warn("[GitHub] GITHUB_TOKEN not found. Falling back to starred repos.");
             }
 
-            // Fallback: top starred repos from REST API (no auth required)
+            // Fallback: top starred repos
+            console.log(`[GitHub] Fetching top starred repos as fallback for ${config.github}...`);
             const reposRes = await axios.get(
                 `https://api.github.com/users/${config.github}/repos?sort=stars&per_page=6`,
                 token ? { headers: { Authorization: `token ${token}` } } : {}
@@ -114,6 +126,7 @@ app.get("/api/github/pinned", async (req, res) => {
                 primaryLanguage: r.language ? { name: r.language, color: null } : null,
                 updatedAt: r.updated_at,
                 repositoryTopics: { nodes: [] },
+                isPinned: false, // Flag to indicate this is a fallback
             }));
         });
         res.json({ success: true, data });
@@ -142,11 +155,11 @@ app.get("/api/github/commits", async (req, res) => {
             const headers = token ? { Authorization: `token ${token}` } : {};
 
             // ── Step 1: Get pinned repo names ────────────────────────────
-            // Check cache first to avoid a redundant network call
             let pinnedRepos = cache.get(`github_pinned_${config.github}`);
 
             if (!pinnedRepos) {
-                // Same logic as /api/github/pinned — fetch and use inline
+                console.log("[GitHub Commits] Pinned repos not in cache, fetching now...");
+                // Re-use logic or call local API? Let's just re-fetch for simplicity
                 if (token) {
                     const query = `
                         query {
@@ -163,16 +176,21 @@ app.get("/api/github/commits", async (req, res) => {
                           }
                         }
                     `;
-                    const gqlRes = await axios.post(
-                        "https://api.github.com/graphql",
-                        { query },
-                        { headers: { Authorization: `bearer ${token}` } }
-                    );
-                    pinnedRepos = gqlRes.data?.data?.user?.pinnedItems?.nodes;
+                    try {
+                        const gqlRes = await axios.post(
+                            "https://api.github.com/graphql",
+                            { query },
+                            { headers: { Authorization: `bearer ${token}` } }
+                        );
+                        pinnedRepos = gqlRes.data?.data?.user?.pinnedItems?.nodes;
+                        if (pinnedRepos) pinnedRepos = pinnedRepos.map(r => ({ ...r, isPinned: true }));
+                    } catch (err) {
+                        console.error("[GitHub Commits] GraphQL error:", err.message);
+                    }
                 }
 
-                // Fallback to top-starred repos
                 if (!pinnedRepos || pinnedRepos.length === 0) {
+                    console.log("[GitHub Commits] Falling back to starred repos for commit history.");
                     const reposRes = await axios.get(
                         `https://api.github.com/users/${config.github}/repos?sort=stars&per_page=6`,
                         { headers }
@@ -180,20 +198,14 @@ app.get("/api/github/commits", async (req, res) => {
                     pinnedRepos = reposRes.data.map((r) => ({
                         name: r.name,
                         url: r.html_url,
-                        description: r.description,
-                        stargazerCount: r.stargazers_count,
-                        primaryLanguage: r.language ? { name: r.language, color: null } : null,
-                        updatedAt: r.updated_at,
-                        repositoryTopics: { nodes: [] },
+                        isPinned: false
                     }));
                 }
-
-                // Populate the pinned cache too, so /api/github/pinned benefits
                 cache.set(`github_pinned_${config.github}`, pinnedRepos);
             }
 
-            // ── Step 2: Fetch recent commits from each pinned repo ───────
-            // Fetch in parallel — 3 commits per repo is enough to get the top 5 total
+            // ── Step 2: Fetch recent commits from each repo ──────────────
+            console.log(`[GitHub Commits] Fetching commits for ${pinnedRepos.length} repos...`);
             const perRepo = 3;
             const commitFetches = pinnedRepos.map((repo) =>
                 axios
@@ -204,19 +216,22 @@ app.get("/api/github/commits", async (req, res) => {
                     .then((res) =>
                         res.data.map((c) => ({
                             sha: c.sha,
-                            message: c.commit.message.split("\n")[0], // first line only
+                            message: c.commit.message.split("\n")[0],
                             date: c.commit.author.date,
                             repo: repo.name,
                             repoUrl: repo.url,
                             url: c.html_url,
                         }))
                     )
-                    .catch(() => []) // if a repo fails (e.g. empty), skip it gracefully
+                    .catch((err) => {
+                        console.warn(`[GitHub Commits] Skip ${repo.name}: ${err.message}`);
+                        return [];
+                    })
             );
 
             const allCommits = (await Promise.all(commitFetches)).flat();
 
-            // ── Step 3: Sort by date desc, take top N ────────────────────
+            // ── Step 3: Sort and filter ──────────────────────────────────
             return allCommits
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .slice(0, config.githubSettings.showCommitCount);

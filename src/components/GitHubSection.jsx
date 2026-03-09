@@ -157,9 +157,17 @@ export default function GitHubSection() {
             <SectionTitle>GitHub Activity</SectionTitle>
 
             {/* ── Pinned Repos ───────────────────────────────────────── */}
-            <h3 className="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
-                <FaGithub /> Pinned Repositories
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <h3 className="text-lg font-semibold text-gray-300 flex items-center gap-2">
+                    <FaGithub /> {repos?.[0]?.isPinned ? "Pinned Repositories" : "Top Repositories"}
+                </h3>
+                {repos && !repos[0]?.isPinned && (
+                    <span className="text-xs px-3 py-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-full">
+                        Showing starred repos (no GITHUB_TOKEN or pinned items)
+                    </span>
+                )}
+            </div>
+
             {reposLoading && <SectionLoader rows={2} />}
             {reposError && <ErrorCard message={reposError} />}
             {repos && (
