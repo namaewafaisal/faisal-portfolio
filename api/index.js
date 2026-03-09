@@ -35,7 +35,23 @@ async function withCache(key, fn) {
 }
 
 // Helper to get GitHub token (checks both standard and Vite-prefixed for Vercel compatibility)
-const getGithubToken = () => process.env.GITHUB_TOKEN || process.env.VITE_GITHUB_TOKEN;
+const getGithubToken = () => {
+    const t = process.env.GITHUB_TOKEN || process.env.VITE_GITHUB_TOKEN;
+    if (!t) return null;
+    // Clean up possible whitespace or quotes from copy-pasting
+    return t.trim().replace(/^['"]|['"]$/g, '');
+};
+
+// ── DEBUG ROUTE (for troubleshooting Vercel env vars) ───────────────────────────
+app.get("/api/github/debug", (req, res) => {
+    const token = getGithubToken();
+    res.json({
+        hasToken: !!token,
+        tokenPrefix: token ? `${token.substring(0, 4)}... (length: ${token.length})` : "NONE",
+        username: config.github,
+        note: "If hasToken is false, check Vercel Project Settings > Environment Variables"
+    });
+});
 
 // ── GITHUB ROUTES ─────────────────────────────────────────────────────────────
 
@@ -45,12 +61,16 @@ app.get("/api/github/pinned", async (req, res) => {
             const token = getGithubToken();
             if (token) {
                 const query = `query { user(login: "${config.github}") { pinnedItems(first: 6, types: REPOSITORY) { nodes { ... on Repository { name description url stargazerCount primaryLanguage { name color } updatedAt repositoryTopics(first: 5) { nodes { topic { name } } } } } } } }`;
-                const gqlRes = await axios.post("https://api.github.com/graphql", { query }, { headers: { Authorization: `bearer ${token}` } });
-                const pinned = gqlRes.data?.data?.user?.pinnedItems?.nodes;
-                if (pinned && pinned.length > 0) return pinned;
+                try {
+                    const gqlRes = await axios.post("https://api.github.com/graphql", { query }, { headers: { Authorization: `bearer ${token}` } });
+                    const pinned = gqlRes.data?.data?.user?.pinnedItems?.nodes;
+                    if (pinned && pinned.length > 0) return pinned.map(p => ({ ...p, isPinned: true }));
+                } catch (gqlErr) {
+                    console.error("[Vercel API] GitHub GraphQL error:", gqlErr.response?.data || gqlErr.message);
+                }
             }
             const reposRes = await axios.get(`https://api.github.com/users/${config.github}/repos?sort=stars&per_page=6`);
-            return reposRes.data.map((r) => ({ name: r.name, description: r.description, url: r.html_url, stargazerCount: r.stargazers_count, primaryLanguage: r.language ? { name: r.language, color: null } : null, updatedAt: r.updated_at, repositoryTopics: { nodes: [] } }));
+            return reposRes.data.map((r) => ({ name: r.name, description: r.description, url: r.html_url, stargazerCount: r.stargazers_count, primaryLanguage: r.language ? { name: r.language, color: null } : null, updatedAt: r.updated_at, repositoryTopics: { nodes: [] }, isPinned: false }));
         });
         res.json({ success: true, data });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -83,7 +103,7 @@ app.get("/api/github/contributions", async (req, res) => {
         const data = await withCache(`github_contrib_${config.github}`, async () => {
             const token = getGithubToken();
             if (!token) {
-                console.warn("[Vercel API] GITHUB_TOKEN or VITE_GITHUB_TOKEN missing!");
+                console.warn("[Vercel API] GITHUB_TOKEN/VITE_GITHUB_TOKEN missing!");
                 return null;
             }
             const to = new Date().toISOString();
