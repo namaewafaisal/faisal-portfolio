@@ -28,6 +28,9 @@ const { config } = await import(
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Helper to get GitHub token (checks both standard and Vite-prefixed for Vercel compatibility)
+const getGithubToken = () => process.env.GITHUB_TOKEN || process.env.VITE_GITHUB_TOKEN;
+
 // ── Cache: 30-minute TTL ──────────────────────────────────────────────────────
 const cache = new NodeCache({ stdTTL: config.cache.ttl, checkperiod: 120 });
 
@@ -68,7 +71,7 @@ async function withCache(key, fn) {
 app.get("/api/github/pinned", async (req, res) => {
     try {
         const data = await withCache(`github_pinned_${config.github}`, async () => {
-            const token = process.env.GITHUB_TOKEN;
+            const token = getGithubToken();
 
             if (token) {
                 console.log(`[GitHub] Attempting to fetch pinned repos for ${config.github}...`);
@@ -151,7 +154,7 @@ app.get("/api/github/pinned", async (req, res) => {
 app.get("/api/github/commits", async (req, res) => {
     try {
         const data = await withCache(`github_commits_${config.github}`, async () => {
-            const token = process.env.GITHUB_TOKEN;
+            const token = getGithubToken();
             const headers = token ? { Authorization: `token ${token}` } : {};
 
             // ── Step 1: Get pinned repo names ────────────────────────────
@@ -159,6 +162,7 @@ app.get("/api/github/commits", async (req, res) => {
 
             if (!pinnedRepos) {
                 console.log("[GitHub Commits] Pinned repos not in cache, fetching now...");
+                const token = getGithubToken();
                 // Re-use logic or call local API? Let's just re-fetch for simplicity
                 if (token) {
                     const query = `
@@ -251,7 +255,7 @@ app.get("/api/github/commits", async (req, res) => {
 app.get("/api/github/contributions", async (req, res) => {
     try {
         const data = await withCache(`github_contrib_${config.github}`, async () => {
-            const token = process.env.GITHUB_TOKEN;
+            const token = getGithubToken();
 
             // Determine the date range (past 52 weeks)
             const to = new Date().toISOString();
@@ -303,7 +307,7 @@ app.get("/api/github/contributions", async (req, res) => {
 app.get("/api/github/profile", async (req, res) => {
     try {
         const data = await withCache(`github_profile_${config.github}`, async () => {
-            const token = process.env.GITHUB_TOKEN;
+            const token = getGithubToken();
             const headers = token ? { Authorization: `token ${token}` } : {};
             const profileRes = await axios.get(
                 `https://api.github.com/users/${config.github}`,

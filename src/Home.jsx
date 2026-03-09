@@ -29,7 +29,6 @@ const socialLinks = [
     color: "hover:text-yellow-400",
   },
 ];
-console.log(import.meta.env.VITE_GITHUB_TOKEN)
 
 export default function Home() {
   const { data: profile } = useFetch("/api/github/profile");
