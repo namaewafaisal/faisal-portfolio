@@ -53,25 +53,44 @@ app.get("/api/github/debug", (req, res) => {
     });
 });
 
+// Utility: Fetch repositories (Pinned via GraphQL, with Starred as fallback)
+async function fetchRepos() {
+    const token = getGithubToken();
+    const username = config.github;
+
+    if (token) {
+        const query = `query { user(login: "${username}") { pinnedItems(first: 6, types: REPOSITORY) { nodes { ... on Repository { name description url stargazerCount primaryLanguage { name color } updatedAt repositoryTopics(first: 5) { nodes { topic { name } } } } } } } }`;
+        try {
+            const gqlRes = await axios.post("https://api.github.com/graphql", { query }, { headers: { Authorization: `bearer ${token}` } });
+            const pinned = gqlRes.data?.data?.user?.pinnedItems?.nodes;
+            if (pinned && pinned.length > 0) {
+                return pinned.map(p => ({ ...p, isPinned: true }));
+            }
+        } catch (err) {
+            console.error("[Vercel API] GitHub GraphQL error:", err.response?.data || err.message);
+        }
+    }
+
+    // Fallback: top starred repos
+    const headers = token ? { Authorization: `token ${token}` } : {};
+    const reposRes = await axios.get(`https://api.github.com/users/${username}/repos?sort=stars&per_page=6`, { headers });
+    return reposRes.data.map((r) => ({
+        name: r.name,
+        description: r.description,
+        url: r.html_url,
+        stargazerCount: r.stargazers_count,
+        primaryLanguage: r.language ? { name: r.language, color: null } : null,
+        updatedAt: r.updated_at,
+        repositoryTopics: { nodes: [] },
+        isPinned: false
+    }));
+}
+
 // ── GITHUB ROUTES ─────────────────────────────────────────────────────────────
 
 app.get("/api/github/pinned", async (req, res) => {
     try {
-        const data = await withCache(`github_pinned_${config.github}`, async () => {
-            const token = getGithubToken();
-            if (token) {
-                const query = `query { user(login: "${config.github}") { pinnedItems(first: 6, types: REPOSITORY) { nodes { ... on Repository { name description url stargazerCount primaryLanguage { name color } updatedAt repositoryTopics(first: 5) { nodes { topic { name } } } } } } } }`;
-                try {
-                    const gqlRes = await axios.post("https://api.github.com/graphql", { query }, { headers: { Authorization: `bearer ${token}` } });
-                    const pinned = gqlRes.data?.data?.user?.pinnedItems?.nodes;
-                    if (pinned && pinned.length > 0) return pinned.map(p => ({ ...p, isPinned: true }));
-                } catch (gqlErr) {
-                    console.error("[Vercel API] GitHub GraphQL error:", gqlErr.response?.data || gqlErr.message);
-                }
-            }
-            const reposRes = await axios.get(`https://api.github.com/users/${config.github}/repos?sort=stars&per_page=6`);
-            return reposRes.data.map((r) => ({ name: r.name, description: r.description, url: r.html_url, stargazerCount: r.stargazers_count, primaryLanguage: r.language ? { name: r.language, color: null } : null, updatedAt: r.updated_at, repositoryTopics: { nodes: [] }, isPinned: false }));
-        });
+        const data = await withCache(`github_pinned_${config.github}`, () => fetchRepos());
         res.json({ success: true, data });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
@@ -81,18 +100,31 @@ app.get("/api/github/commits", async (req, res) => {
         const data = await withCache(`github_commits_${config.github}`, async () => {
             const token = getGithubToken();
             const headers = token ? { Authorization: `token ${token}` } : {};
-            let pinnedRepos = cache.get(`github_pinned_${config.github}`);
-            if (!pinnedRepos) {
-                const reposRes = await axios.get(`https://api.github.com/users/${config.github}/repos?sort=stars&per_page=6`, { headers });
-                pinnedRepos = reposRes.data.map((r) => ({ name: r.name, url: r.html_url }));
+
+            // Get the repositories to fetch commits for (check cache first, then fetch)
+            let repos = cache.get(`github_pinned_${config.github}`);
+            if (!repos) {
+                repos = await fetchRepos();
+                cache.set(`github_pinned_${config.github}`, repos);
             }
-            const commitFetches = pinnedRepos.slice(0, 6).map((repo) =>
+
+            const commitFetches = repos.slice(0, 6).map((repo) =>
                 axios.get(`https://api.github.com/repos/${config.github}/${repo.name}/commits?per_page=3`, { headers })
-                    .then((res) => res.data.map((c) => ({ sha: c.sha, message: c.commit.message.split("\n")[0], date: c.commit.author.date, repo: repo.name, repoUrl: repo.url, url: c.html_url })))
+                    .then((res) => res.data.map((c) => ({
+                        sha: c.sha,
+                        message: c.commit.message.split("\n")[0],
+                        date: c.commit.author.date,
+                        repo: repo.name,
+                        repoUrl: repo.url,
+                        url: c.html_url
+                    })))
                     .catch(() => [])
             );
+
             const allCommits = (await Promise.all(commitFetches)).flat();
-            return allCommits.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, config.githubSettings.showCommitCount);
+            return allCommits
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, config.githubSettings.showCommitCount);
         });
         res.json({ success: true, data });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -102,10 +134,7 @@ app.get("/api/github/contributions", async (req, res) => {
     try {
         const data = await withCache(`github_contrib_${config.github}`, async () => {
             const token = getGithubToken();
-            if (!token) {
-                console.warn("[Vercel API] GITHUB_TOKEN/VITE_GITHUB_TOKEN missing!");
-                return null;
-            }
+            if (!token) return null;
             const to = new Date().toISOString();
             const from = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
             const query = `query { user(login: "${config.github}") { contributionsCollection(from: "${from}", to: "${to}") { contributionCalendar { totalContributions weeks { contributionDays { contributionCount date color } } } } } }`;
@@ -123,7 +152,14 @@ app.get("/api/github/profile", async (req, res) => {
             const headers = token ? { Authorization: `token ${token}` } : {};
             const profileRes = await axios.get(`https://api.github.com/users/${config.github}`, { headers });
             const p = profileRes.data;
-            return { login: p.login, name: p.name, avatarUrl: p.avatar_url, bio: p.bio, followers: p.followers, publicRepos: p.public_repos };
+            return {
+                login: p.login,
+                name: p.name,
+                avatarUrl: p.avatar_url,
+                bio: p.bio,
+                followers: p.followers,
+                publicRepos: p.public_repos
+            };
         });
         res.json({ success: true, data });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
